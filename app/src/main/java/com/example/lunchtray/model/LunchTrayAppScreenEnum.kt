@@ -4,7 +4,7 @@ import androidx.annotation.StringRes
 import com.example.lunchtray.R
 
 enum class LunchTrayAppScreenEnum(@StringRes val title: Int) {
-    START(title = R.string.start_order),
+    START(title = R.string.app_name),
     ENTREE_MENU(title = R.string.choose_entree),
     SIDE_DISH_MENU(title = R.string.choose_side_dish),
     ACCOMPANIMENT_MENU(title = R.string.choose_accompaniment),

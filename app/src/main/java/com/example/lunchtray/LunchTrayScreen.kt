@@ -15,6 +15,7 @@
  */
 package com.example.lunchtray
 
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -37,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -44,7 +46,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.lunchtray.ui.OrderViewModel
 import androidx.navigation.compose.rememberNavController
+import com.example.lunchtray.datasource.DataSource
 import com.example.lunchtray.model.LunchTrayAppScreenEnum
+import com.example.lunchtray.ui.AccompanimentMenuPreview
+import com.example.lunchtray.ui.AccompanimentMenuScreen
+import com.example.lunchtray.ui.CheckoutScreen
+import com.example.lunchtray.ui.EntreeMenuScreen
+import com.example.lunchtray.ui.SideDishMenuScreen
 import com.example.lunchtray.ui.StartOrderScreen
 import com.example.lunchtray.ui.theme.LunchTrayTheme
 
@@ -58,7 +66,7 @@ fun LunchTrayAppBar(
     modifier: Modifier = Modifier
 ) {
     CenterAlignedTopAppBar(
-        title = { Text(stringResource(R.string.app_name)) },
+        title = { Text(stringResource(currentScreen.title)) },
         modifier = modifier,
         navigationIcon = {
             if (canNavigateBack) {
@@ -91,7 +99,7 @@ fun LunchTrayApp(
 
     Scaffold(
         topBar = {
-            // TODO: AppBar
+
             LunchTrayAppBar(
                 canNavigateBack = navController.previousBackStackEntry != null,
                 navigateUp = { navController.navigateUp() },
@@ -101,9 +109,81 @@ fun LunchTrayApp(
     ) { innerPadding ->
         val uiState by viewModel.uiState.collectAsState()
 
-        // TODO: Navigation host
-
+        NavHost(
+            modifier = Modifier.padding(innerPadding).padding(horizontal = 12.dp),
+            navController = navController,
+            startDestination = LunchTrayAppScreenEnum.START.name
+        ) {
+            composable(route = LunchTrayAppScreenEnum.START.name) {
+                StartOrderScreen(
+                    onStartOrderButtonClicked = { navController.navigate(LunchTrayAppScreenEnum.ENTREE_MENU.name) },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            composable(route = LunchTrayAppScreenEnum.ENTREE_MENU.name) {
+                EntreeMenuScreen(
+                    options = DataSource.entreeMenuItems,
+                    onCancelButtonClicked = {
+                        cancelOrderAndNavigateToStart(
+                            viewModel,
+                            navController
+                        )
+                    },
+                    onNextButtonClicked = { navController.navigate(LunchTrayAppScreenEnum.SIDE_DISH_MENU.name) },
+                    onSelectionChanged = { viewModel.updateEntree(it) },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            composable(route = LunchTrayAppScreenEnum.SIDE_DISH_MENU.name) {
+                SideDishMenuScreen(
+                    options = DataSource.sideDishMenuItems,
+                    onSelectionChanged = { viewModel.updateSideDish(it) },
+                    onCancelButtonClicked = {
+                        cancelOrderAndNavigateToStart(
+                            viewModel,
+                            navController
+                        )
+                    },
+                    onNextButtonClicked = { navController.navigate(LunchTrayAppScreenEnum.ACCOMPANIMENT_MENU.name) },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            composable(route = LunchTrayAppScreenEnum.ACCOMPANIMENT_MENU.name) {
+                AccompanimentMenuScreen(
+                    options = DataSource.accompanimentMenuItems,
+                    onSelectionChanged = { viewModel.updateAccompaniment(it) },
+                    onCancelButtonClicked = {
+                        cancelOrderAndNavigateToStart(
+                            viewModel,
+                            navController
+                        )
+                    },
+                    onNextButtonClicked = { navController.navigate(LunchTrayAppScreenEnum.CHECKOUT.name)},
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            composable(route = LunchTrayAppScreenEnum.CHECKOUT.name) {
+                CheckoutScreen(
+                    orderUiState = uiState,
+                    onCancelButtonClicked = {
+                        cancelOrderAndNavigateToStart(
+                            viewModel,
+                            navController
+                    ) },
+                    onNextButtonClicked = { navController.navigate(LunchTrayAppScreenEnum.START.name)},
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
     }
+}
+
+private fun cancelOrderAndNavigateToStart(
+    viewModel: OrderViewModel,
+    navController: NavHostController
+) {
+    viewModel.resetOrder()
+    navController.popBackStack(LunchTrayAppScreenEnum.START.name, inclusive = false)
 }
 
 @Preview(showBackground = true, showSystemUi = true)
